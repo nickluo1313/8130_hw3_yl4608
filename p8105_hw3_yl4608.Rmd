@@ -1,0 +1,194 @@
+---
+title: "hw3 data visualization"
+author: "Yutian Luo"
+date: "10/6/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# install.packages("devtools")
+devtools::install_github("p8105/p8105.datasets")
+
+
+library(p8105.datasets)
+library(tidyverse)
+library(dplyr)
+data("instacart")
+```
+
+
+The goal is to do some exploration of this dataset. 
+
+To that end, write a short description of the dataset, 
+noting the size and structure of the data, 
+describing some key variables, 
+and giving illstrative examples of observations
+
+
+
+
+
+How many aisles are there, and which aisles are the most items ordered from?
+
+Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it.
+
+```{r}
+instacart %>% 
+  count(aisle) %>% 
+  filter(n > 1000) %>% 
+  ggplot(aes(x = aisle, y = n)) + 
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+
+
+
+Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
+
+```{r}
+instacart %>% 
+  filter(aisle %in% c("baking ingredients", "dog fodd care", "packaged vegetables fruits")) %>% 
+  group_by(aisle) %>% 
+  count(product_name) %>% 
+  mutate(rank = min_rank(desc(n))) %>% 
+  filter(rank < 4) %>% 
+  arrange(aisle, rank) %>% 
+  knitr::kable()
+
+```
+
+
+Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+
+```{r}
+instacart %>% 
+  filter(product_name %in% c("Pink Lady Apples","Coffee Ice Cream")) %>% 
+  group_by(product_name, order_dow) %>% 
+  summarize(mean_hour = mean(order_hour_of_day)) %>% 
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour
+  ) %>% 
+  knitr::kable()
+```
+
+
+
+
+
+
+
+
+
+## Problem 2
+
+In this spreadsheet, variables activity.* are the activity counts for each minute of a 24-hour day starting at midnight.
+
+Q:
+Load, tidy, and otherwise wrangle the data. 
+Your final dataset should include all originally observed variables and values; 
+have useful variable names; 
+include a weekday vs weekend variable; 
+and encode data with reasonable variable classes. 
+
+```{r}
+accel_data = 
+  read_csv(file = "./data/accel_data.csv") %>% 
+  # pivot to long format
+  pivot_longer(
+    activity.1 : activity.1440,
+    names_to = "activity_count",
+    values_to = "minute"
+  ) %>% 
+  mutate(
+    weekday_vs_weekend = 
+      ifelse(day == 'Friday' | day == 'Saturday', "weekend", "weekday"),
+    weekday_vs_weekend = as.factor(weekday_vs_weekend),
+    activity_count = as.character(activity_count)
+  ) %>%
+  separate(activity_count, into = c("acti","count"), sep = 9) %>% 
+  mutate(
+    count = as.integer(count)
+  ) %>% 
+  select(-acti)
+  
+# take a look at the tidy data
+head(accel_data) %>% 
+knitr::kable()
+```
+
+Q:
+
+Describe the resulting dataset (e.g. what variables exist, how many observations, etc).
+
+A:
+
+The dataset contains all the recorded activity of the patient, given that record interval is 1 minute. It contains variables `r names(accel_data)`, and it has a total dimension of `r dim_desc(accel_data)`. The total observation is `r count(accel_data)`.
+
+
+Q:
+
+Traditional analyses of accelerometer data focus on the total activity over the day.Using your tidied dataset, aggregate accross minutes to create a total activity variable for each day, 
+and create a table showing these totals. 
+
+```{r}
+# create a table showing total activity
+accel_data_df1 =
+  accel_data %>% 
+  group_by(day_id) %>% 
+  summarize(total_activity = sum(minute))
+
+# show the table
+accel_data_df1 %>% 
+  knitr::kable()
+```
+
+
+Q:
+
+Are any trends apparent?
+
+```{r}
+# detect any trend using line plot and smooth line plot
+accel_data_df1 %>% 
+  ggplot(mapping = aes(x = day_id, y = total_activity)) + geom_point() + geom_line()
+
+accel_data_df1 %>% 
+   ggplot(aes(x = day_id, total_activity)) + geom_point() + geom_smooth()
+```
+
+
+A:
+
+According to the smooth curve, there is a limited evidence of trend. However, the points have a large variation, since the curve is jumping up and down.
+
+
+Q:
+
+Accelerometer data allows the inspection activity over the course of the day. Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. 
+Describe in words any patterns or conclusions you can make based on this graph.
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
