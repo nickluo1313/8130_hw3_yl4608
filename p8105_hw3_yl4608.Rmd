@@ -6,18 +6,22 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# # embed the plots
+# knitr::opts_chunk$set(
+#   fig.width = 5,
+#   fig.asp = 9,
+#   out.width = "90%"
+# )
 ```
-
 
 ```{r}
 # install.packages("devtools")
 devtools::install_github("p8105/p8105.datasets")
 
-
 library(p8105.datasets)
 library(tidyverse)
 library(dplyr)
+library(ggridges)
 data("instacart")
 ```
 
@@ -103,20 +107,20 @@ accel_data =
   # pivot to long format
   pivot_longer(
     activity.1 : activity.1440,
-    names_to = "activity_count",
-    values_to = "minute"
+    names_to = "minute",
+    values_to = "activity_count"
   ) %>% 
   mutate(
     weekday_vs_weekend = 
       ifelse(day == 'Friday' | day == 'Saturday', "weekend", "weekday"),
     weekday_vs_weekend = as.factor(weekday_vs_weekend),
-    activity_count = as.character(activity_count)
+    day = as.factor(day)
   ) %>%
-  separate(activity_count, into = c("acti","count"), sep = 9) %>% 
+  separate(minute, into = c("acti","minute"), sep = 9, remove = TRUE) %>% 
   mutate(
-    count = as.integer(count)
+    minute = as.integer(minute)
   ) %>% 
-  select(-acti)
+  select(-acti) 
   
 # take a look at the tidy data
 head(accel_data) %>% 
@@ -142,7 +146,7 @@ and create a table showing these totals.
 accel_data_df1 =
   accel_data %>% 
   group_by(day_id) %>% 
-  summarize(total_activity = sum(minute))
+  summarize(total_activity = sum(activity_count))
 
 # show the table
 accel_data_df1 %>% 
@@ -155,34 +159,152 @@ Q:
 Are any trends apparent?
 
 ```{r}
-# detect any trend using line plot and smooth line plot
-accel_data_df1 %>% 
-  ggplot(mapping = aes(x = day_id, y = total_activity)) + geom_point() + geom_line()
+accel_data_df2 = 
+  right_join(x = accel_data, y = accel_data_df1) %>% 
+  mutate(
+    day = forcats::fct_relevel(day, c("Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"))
+  )
 
-accel_data_df1 %>% 
-   ggplot(aes(x = day_id, total_activity)) + geom_point() + geom_smooth()
+# detect any trend using line plot and smooth line plot
+
+# preliminary:
+# scatterplot: total activity by day_id
+accel_data_df2 %>% 
+  ggplot(mapping = aes(x = day_id, y = total_activity)) + 
+  geom_point()
+
+# smooth curve: total activity by day_id
+accel_data_df2 %>% 
+   ggplot(aes(x = day_id, total_activity)) + 
+  geom_point() + 
+  geom_smooth()
+
+# boxplot: total activity by day
+accel_data_df2 %>% 
+  ggplot(aes(x = day, total_activity)) + 
+  geom_boxplot()
+
+# density: total activity by weekend
+accel_data_df2 %>% 
+  ggplot(aes(x = total_activity, fill = weekday_vs_weekend)) +      geom_density(alpha = 0.5, adjust = 0.9)
+
 ```
 
 
 A:
 
-According to the smooth curve, there is a limited evidence of trend. However, the points have a large variation, since the curve is jumping up and down.
+According to the scatter smooth curve, there is a limited evidence of trend, which indicates that the activity increases as the observational days increase, and it decreases after the 18th day. It returns back to a higher value at 35th day.   
+
+In relation to each weekdays, each day have different means and range. However, Satureday has the largest range for activity. Wednesday and Tuesday have a very little range. Friday is the most active day.
+
+Observe the weekday and weekend's relation with daily acitivity, we can say that weekdays have a more stable activity, while weekend activity often varies a lot.
+
+It should be noted, that the observational time is limited in 5 weeks. Some more significant observations can be made about the weekday weekends' relation to daily activity if the time period is longer.
 
 
 Q:
 
-Accelerometer data allows the inspection activity over the course of the day. Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. 
-Describe in words any patterns or conclusions you can make based on this graph.
+Accelerometer data allows the inspection activity over the course of the day.
+Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. 
+
 
 ```{r}
+accel_data %>% 
+  ggplot(aes(x = minute, activity_count, color = day)) + 
+  geom_line() +
+  scale_x_continuous(
+    breaks = c(0, 240, 480, 720, 960, 1200, 1440),
+    labels = c("0:00", "04:00", "08:00", "12:00", "16:00", "20:00", "24:00")
+  ) 
+```
+
+Q:
+
+Describe in words any patterns or conclusions you can make based on this graph.
+
+
+A:
+
+Wednesday has the lowest activity level in the coures of day. The activity level has to high points: around noon and around 8pm - 9pm. We can also see that the patient is very active in Friday nights.
+
+
+
+
+# Problem 3
+
+```{r}
+library(p8105.datasets)
+data("ny_noaa")
+```
+
+
+Q:
+
+The goal is to do some exploration of this dataset. To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and indicating the extent to which missing data is an issue
+
+
+```{r explore dataset}
+# describe data
+ny_noaa
+summary(ny_noaa)
+
+# describe NA: id and date both have no missing
+anyNA(ny_noaa$id)       
+anyNA(ny_noaa$date)
+
+na_tmax = sum(is.na(ny_noaa$tmax))
+na_tmin = sum(is.na(ny_noaa$tmin))
+na_prcp = sum(is.na(ny_noaa$prcp))
+na_snow = sum(is.na(ny_noaa$snow))
+na_snwd = sum(is.na(ny_noaa$snwd))
+na_total = sum(is.na(ny_noaa))
+```
+
+A:
+
+The dataset have a size of `r ncol(ny_noaa)` * `r nrow(ny_noaa)`. It describes the weather record of the area from `r min(ny_noaa$date)` to `r max(ny_noaa$date)`. The variables that describes weather metrics include: `r names(ny_noaa)[3:7]`. 
+
+Among these data of `r nrow(ny_noaa) * ncol(ny_noaa)`, there are `r na_total` missing values, which takes up to `r na_total / (nrow(ny_noaa) * ncol(ny_noaa)) * 100` % of the observations. Among these, `r na_tmax / na_total * 100` % are from tmax, `r na_tmin / na_total * 100` % are from tmin. 
+
+
+
+Q:
+
+Do some data cleaning. 
+Create separate variables for year, month, and day. 
+Ensure observations for temperature, precipitation, and snowfall are given in reasonable units. 
+For snowfall, what are the most commonly observed values? Why?
+
+```{r data cleaning}
+ny_noaa_tidy = 
+ny_noaa %>% 
+  mutate(
+    date = as.character(date),
+    tmax = as.numeric(tmax),
+    tmin = as.numeric(tmin),
+    prcp = prcp / 10,
+    tmax = tmax / 10,
+    tmin = tmin / 10
+  ) %>% 
+  separate(date, into = c("year", "month", "day"), sep = "-")
+
+# most commonly observed snowfall
+snow_count = count(ny_noaa, snow)
+snow_count
 
 ```
 
 
 
+Q:
 
+Make a two-panel plot showing the average max temperature in January and in July in each station across years. Is there any observable / interpretable structure? Any outliers?
 
-
+```{r}
+ny_noaa %>% 
+  group_by()
+  
+```
 
 
 
