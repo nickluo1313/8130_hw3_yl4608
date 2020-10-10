@@ -26,6 +26,9 @@ data("instacart")
 ```
 
 
+# Problem 1
+
+
 The goal is to do some exploration of this dataset. 
 
 To that end, write a short description of the dataset, 
@@ -273,7 +276,6 @@ Q:
 Do some data cleaning. 
 Create separate variables for year, month, and day. 
 Ensure observations for temperature, precipitation, and snowfall are given in reasonable units. 
-For snowfall, what are the most commonly observed values? Why?
 
 ```{r data cleaning}
 ny_noaa_tidy = 
@@ -286,29 +288,56 @@ ny_noaa %>%
     tmax = tmax / 10,
     tmin = tmin / 10
   ) %>% 
-  separate(date, into = c("year", "month", "day"), sep = "-")
+  separate(date, into = c("year", "month", "day"), sep = "-") %>% 
+  mutate(
+    year = as.numeric(year),
+    month = as.numeric(month),
+    day = as.numeric(day)
+  )
 
 # most commonly observed snowfall
-snow_count = count(ny_noaa, snow)
-snow_count
+snow_count = count(ny_noaa, snow) %>% 
+  mutate(
+    snow_rank = min_rank(desc(n))
+  ) %>% 
+  arrange(snow_rank, by_group = FALSE)
 
+```
+
+Q:
+
+For snowfall, what are the most commonly observed values? Why?
+
+A:
+
+0. Since most of the days in a year it is not snowing.
+
+
+Q:
+
+Make a two-panel plot showing the average max temperature in January and in July in each station across years. 
+Is there any observable / interpretable structure? Any outliers?
+
+```{r}
+ny_noaa_df1 = 
+ny_noaa_tidy %>% 
+  filter(month == 1 | month == 7) %>%
+  group_by(id, month) %>% 
+  summarise(group_by(id, month))
+
+
+view(ny_noaa_df1)
 ```
 
 
 
 Q:
 
-Make a two-panel plot showing the average max temperature in January and in July in each station across years. Is there any observable / interpretable structure? Any outliers?
+Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
 
 ```{r}
-ny_noaa %>% 
-  group_by()
-  
+
 ```
-
-
-
-
 
 
 
