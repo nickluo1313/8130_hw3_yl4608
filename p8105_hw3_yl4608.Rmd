@@ -361,21 +361,18 @@ ny_noaa_tidy %>%
 ```
 
 ```{r distribution of snowfall values}
-ny_noaa_df3 = 
-ny_noaa_tidy %>% 
-  filter(snow > 0 & snow < 100) %>% 
-  group_by(year) %>% 
-  drop_na() 
 
 ny_df3_plot = 
 ny_noaa_tidy %>% 
+  filter(snow > 0 & snow < 100) %>% 
   ggplot(aes(x = snow, year, group = year))+
   geom_density_ridges()
 
 ```
 
 ```{r combine 2 plots in a panel}
-##(ny_df2_plot + ny_df3_plot)
+library(patchwork)
+ny_df2_plot + ny_df3_plot
 ```
 
 
