@@ -316,26 +316,43 @@ A:
 Q:
 
 Make a two-panel plot showing the average max temperature in January and in July in each station across years. 
-Is there any observable / interpretable structure? Any outliers?
 
 ```{r}
 ny_noaa_df1 = 
 ny_noaa_tidy %>% 
   filter(month == 1 | month == 7) %>%
-  group_by(id, month) %>% 
-  summarise(group_by(id, month))
-
-
-view(ny_noaa_df1)
+  group_by(id, month, year, day) %>% 
+  summarize(
+    avg_tmax = mean(tmax, na.rm = TRUE)
+  ) %>% 
+  drop_na()
+  
+ggplot(ny_noaa_df1, aes(x = year, avg_tmax)) + 
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  facet_grid(.~month)
 ```
-
 
 
 Q:
 
-Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+Is there any observable / interpretable structure? Any outliers?
+
+
+A:
+
+The average max temperature is higher in July, by 20 degress approximately. In January, the variations in tmax is greater than that in July. Also, the average tmax fluctuates a lot over the years from 1980 to 2010, this implies some more interesting hypothesis to be analyzed relating years with temperature change.
+
+
+Q:
+
+Make a two-panel plot showing 
+(i) tmax vs tmin for the full dataset 
+(note that a scatterplot may not be the best option);
+(ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
 
 ```{r}
+
 
 ```
 
