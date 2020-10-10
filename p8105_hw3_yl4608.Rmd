@@ -22,6 +22,7 @@ library(p8105.datasets)
 library(tidyverse)
 library(dplyr)
 library(ggridges)
+library(hexbin)
 data("instacart")
 ```
 
@@ -327,10 +328,11 @@ ny_noaa_tidy %>%
   ) %>% 
   drop_na()
   
-ggplot(ny_noaa_df1, aes(x = year, avg_tmax)) + 
-  geom_point()+
+ggplot(ny_noaa_df1, aes(x = year, avg_tmax), show_legend = FALSE) + 
+  geom_point(aes(color = id))+
   geom_smooth(se = FALSE)+
-  facet_grid(.~month)
+  facet_grid(.~month) + 
+  theme(legend.position = "none")
 ```
 
 
@@ -351,11 +353,30 @@ Make a two-panel plot showing
 (note that a scatterplot may not be the best option);
 (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
 
-```{r}
+```{r tmax vs tmin for the full dataset }
+ny_df2_plot =
+ny_noaa_tidy %>%
+  ggplot(aes(x = tmax, tmin)) +
+  geom_hex()
+```
 
+```{r distribution of snowfall values}
+ny_noaa_df3 = 
+ny_noaa_tidy %>% 
+  filter(snow > 0 & snow < 100) %>% 
+  group_by(year) %>% 
+  drop_na() 
+
+ny_df3_plot = 
+ny_noaa_tidy %>% 
+  ggplot(aes(x = snow, year, group = year))+
+  geom_density_ridges()
 
 ```
 
+```{r combine 2 plots in a panel}
+##(ny_df2_plot + ny_df3_plot)
+```
 
 
 
